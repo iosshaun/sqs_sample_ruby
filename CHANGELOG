@@ -1,0 +1,11 @@
+July 6, 2009:
+  * Updated for API Version 2009-02-01. 
+      - Updated signature generation algorithm to use SignatureVersion 2 since
+        Signature Version 1 is deprecated.
+      - URL encoded query parameters as well as values, per Amazon
+        documentation's recommendation. (see "Query Request Authentication" in
+        AWS Simple Queue Service Developer Guide)
+      - Updated queue references to use endpoint URLs rather than queue names,
+        where needed.
+  * Added sample call to DeleteQueue. 
+  * Bumped up version number to 0.1.4.
