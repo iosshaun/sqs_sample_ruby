@@ -1,0 +1,291 @@
+== About This Sample 
+
+* Ruby Query API sample to demonstrate creating a queue, sending messages,
+  receiving messages, and deleting messages.
+* Based on the 2009-02-01 API version (Query).
+
+The Ruby sample code includes an example file called <tt>sqs_demo.rb</tt> that
+performs basic SQS actions. We explain how to run that example. We also walk
+through the contents of that file. After you're familiar with the contents of
+<tt>sqs_demo.rb</tt>, you can modify the file as you'd like to suit your needs.
+
+== Prerequisites
+
+* A valid Amazon Web Services developer account (go to http://aws.amazon.com
+  to sign up for one).
+* You must be signed up to use Amazon SQS (go to http://aws.amazon.com/sqs to
+  sign up for the service).
+* Ruby 1.8.5 or newer (to downloado it, go to http://www.ruby-lang.org/en/downloads)
+* Rubygems (to download it, go to http://rubyforge.org/frs/?group_id=126)
+* xml-simple gem (to download it, go to
+  http://rubyforge.org/projects/xml-simple)
+
+=== To install Rubygems and the xml-simple gem
+
+1.  Download Rubygems.
+2. Extract the package.
+3. At a command line, type ruby setup.rb to install Rubygems.
+4. Download the xml-simple gem.
+5. Use the following command to install the xml-simple gem.
+    gem install -y xml-simple
+
+== Running the Example Application
+
+These are the tasks that the example application performs.
+
+1. Creates a queue named SQS-Test-Queue-Ruby.
+2. Confirms that your new queue is in the SQS system.
+3. Sends a message to the queue (the message is, "This is a test message.").
+4. Gets the approximate number of messages in the queue. 
+5. Receives the message from the queue and returns the message ID, the receipt handle (later used to delete the message), and the message itself.
+6. Deletes the message from the queue.
+
+<b>Note:</b> Because of the distributed architecture of SQS, the result is not
+an exact count of the number of messages in a queue. In most cases it should be
+close to the actual number of messages in the queue, but you should not rely on
+the count being precise.
+
+The output from the sample application looks like the following.
+
+  1) Queue Created: SQS-Test-Queue-Ruby
+  2) Queue Found
+  3) Message Sent
+  message id: 
+  MEVOQVM0RUcwMkROTkFSRlpEWDl8NlhCMjNRU0g3Sk41NzNBWDdBQzF8SjlNSkYxQkZWRVYzQTg1TVI2TjE=
+  4) Approximate Number of Messages: 2
+  5) Message Received
+  message id: 
+  MDQxNEc0WlpYRTQ4UkpBNEJHNkN8NlhCMjNRU0g3Sk41NzNBWDdBQzF8S0RTOTg5TUdQOE5EQjRHSlpYOTA=
+  receipt handle: 
+  MDQxNEc0WlpYRTQ4UkpBNEJHNkN8NlhCMjNRU0g3Sk41NzNBWDdBQzF8S0RTOTg5TUdQOE5EQjRHSlpYOTA=:MDQxNEc0WlpYRTQ4UkpBNEJHNkN8NlhCMjNRU0g3Sk41NzNWDdBQzF8S0RTOTg5TUdQOE5EQjRHSlpYOTA=
+  message: This is a test message.
+  Message deleted
+
+You can re-run the example every 60 seconds: sending additional requests
+to create a queue with the name SQS-Test-Queue-Ruby does not result in an
+error, unless you created and deleted the queue in the last 60 seconds.
+
+Feel free to modify the example (you could update it to create multiple queues,
+or send multiple messages to a queue, for example).
+
+=== To run the example
+
+1. Get your Secret Access Key and Access Key ID (log in to your AWS developer count and click <b>Your Web Services Account</b> > <b>AWS Access Identifiers</b>.
+
+2. Open the <tt>sqs_demo.rb</tt> file in a text editor.
+
+3. Locate the following two lines of code: 
+
+  AWS_ACCESS_KEY_ID = ''
+  AWS_SECRET_ACCESS_KEY = ''
+
+4. Insert your Access Key ID and Secret Access Key between the quotation marks.
+
+5. Save the file.
+
+6. At a command prompt, go to the directory where sqs_demo.rb is and type the following: 
+
+  ruby sqs_demo.rb
+
+You now have a queue in the SQS system called SQS-Test-Queue-Ruby; you've sent
+a message to it and received and deleted the message. Other SQS users who run
+the example will also have queues named SQS-Test-Queue-Ruby. However, queue
+names are scoped within each AWS developer account, and the AWS Access Key ID
+in your requests tells SQS which queue named SQS-Test-Queue-Ruby to access.
+
+=== Creating a Queue
+
+The application starts with the necessary statements for the required
+libraries. 
+
+  require "lib/aws/sqs.rb"
+  require "lib/aws/sqs/client.rb"
+  require "lib/aws/sqs/queue.rb"
+
+  require 'cgi'
+
+Variables are declared for your AWS access identifiers, the service URL for
+SQS, a queue name, and a test message. 
+
+  AWS_ACCESS_KEY_ID = 'Insert your Access Key ID here'
+  AWS_SECRET_ACCESS_KEY = 'Insert your Secret Access Key here'
+  ENDPOINT = 'http://queue.amazonaws.com'
+  AMAZON_SQS_TEST_QUEUE = "SQS-Test-Queue-Ruby"
+  SQS_TEST_MESSAGE = 'This is a test message.'
+
+The following code creates a queue. 
+
+  client = AWS::SQS::Client.new(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, :endpoint => ENDPOINT)
+ 
+  # Create our Queue...
+
+  # Note: If the queue has recently been deleted, the application needs to wait
+  # for 60 seconds before a queue with the same name can be created again.
+
+  try_again = true
+  while try_again
+    begin
+      try_again = false
+      queue = client.create_queue(AMAZON_SQS_TEST_QUEUE)
+      puts "1) Queue Created: " + queue.name
+    rescue => Exception
+      # Was the queue recently deleted?
+      if Exception == 'AWS.SimpleQueueService.QueueDeletedRecently'
+        # Yes - wait 60 seconds and retry (propagation delay)
+        puts '1a) AWS.SimpleQueueService.QueueDeletedRecently -- waiting 60 seconds...'
+        sleep(60)
+        try_again = true
+      else
+        puts Exception
+      end
+    end
+  end
+
+<b>Note:</b> To help you understand how best to design your own application,
+the example application includes a check for the
+SimpleQueueService.QueueDeletedRecently error, which SQS returns if you try to
+create a new queue with the name of a queue you've just deleted. You must wait
+60 seconds first.
+
+=== Confirming the Queue Exists
+
+Now that your queue has been created, the application confirms the queue's
+existence by listing the queues you have in SQS.
+
+When you create a queue, it can take a short time for the queue to propagate
+throughout the SQS system. The following code lists your queues and keeps
+polling until the new queue is included in the list. 
+
+  retry_count = 0
+  try_again = true
+  while try_again
+    queues = client.list_queues
+
+    # Does our queue exist yet?
+    if queues.to_s =~ /\/#{AMAZON_SQS_TEST_QUEUE}$/
+      try_again = false
+      retry_count = 0
+      puts "2) Queue Found"
+    else
+      try_again = true
+      retry_count ++
+      puts("2a) Queue not available yet - keep polling (" + retry_count + ")")
+    end
+  end
+
+=== Sending a Message to the Queue
+
+Now that the application has confirmed your queue exists in the SQS system, it
+sends a message to the queue. It then gets the approximate number of messages
+in the queue. You can use the number to help determine how many resources (such
+as Amazon EC2 instances) you need to process the messages in a queue.
+
+<b>Note:</b> Because of the distributed architecture of SQS, the result is not
+an exact count of the number of messages in a queue. In most cases it should be
+close to the actual number of messages in the queue, but you should not rely on
+the count being precise.
+
+The following code sends a message to your queue and gets the approximate
+number of messages in the queue.
+
+  # Send a message
+  message_id = queue.send_message(CGI.escape(SQS_TEST_MESSAGE))
+  puts "3) Message Sent"
+  puts "message id: " + message_id
+
+  # Get approximate message count in the queue...
+  # Because SQS is a distributed system, the count may not be accurate.
+  attribute = queue.get_queue_attributes("ApproximateNumberOfMessages")
+  puts "4) Approximate Number of Messages: " + attribute
+
+=== Retrieving and Deleting a Message
+
+Now that a message is in the queue, the application receives it and then
+deletes it with a separate request. SQS doesn't automatically delete a message
+after returning it to you, in case you don't actually receive the message (the
+receiving component could fail or lose its connection). By sending a request to
+delete the message, you acknowledge that you've successfully received and
+processed the message.
+
+When requesting to get a message from the queue, you can't specify which
+message to get. You simply specify the maximum number of messages you want to
+get (up to 10), and SQS returns up to that maximum number. Because SQS is a
+distributed system and the particular queue the example application is working
+with has very few messages in it, the response to the receive request might be
+empty. Therefore, the application continues to poll until it gets the message.
+Then it uses the receipt handle that was returned with the message to delete
+the message from the queue.
+
+The following code receives the message from your queue and then deletes the
+message.
+
+  # Receive a message
+  # If SQS returns empty, the message is not available yet.  
+  # We keep retrying until the message is delivered.
+  try_again = true
+      while try_again
+          begin
+          try_again = false
+          messages = queue.receive_messages
+          if messages.nil?
+              try_again = true
+  
+          # Message received...
+          else
+              messages.each do |message|
+                  puts "5) Message Received"
+                  message_id = message["Message"][0]["MessageId"][0]
+                  puts "message id: " + message_id
+                  @receipt_handle = message["Message"][0]["ReceiptHandle"][0]
+                  puts "receipt handle: " + @receipt_handle
+                  body = message["Message"][0]["Body"][0]
+                  puts "message: " + CGI.unescape(body)
+              end
+          end
+      rescue => Exception
+          puts 'Test message not available - keep polling...'
+          try_again = true
+          sleep(1)
+      end
+  end
+  
+  # Delete message...
+  if queue.delete_message(@receipt_handle)
+      puts "Message deleted"
+  end
+
+=== Handling Exceptions and 5xx Errors
+
+You should design your system to retry any request that receives an HTTP 5xx
+status code—indicating a server-side issue. The code snippets in this section
+show how the example application handles the 5xx errors using an exponential
+backoff algorithm. The sample code also shows any required, explicit exception
+handling.
+
+In the Ruby sample code, the application needs to handle the general exception
+type, as shown in the following code snippet.
+
+  # General exception - exit and report error...
+
+  rescue => Exception
+    puts "Exception occurred: " + Exception
+  end
+
+To handle the 5xx errors, the sample code includes the following code in the
+<tt>lib/aws/sqs/client.rb</tt> file.
+
+  while try_again do
+    # Send Amazon SQS query to endpoint
+    response = http.start { |http|
+      http.request(request)
+    }
+    # Check if we should retry this request
+    if response == Net::HTTPServerError && retry_count <= 5
+      retry_count ++
+      sleep(retry_count / 4 * retry_count)
+    else
+      try_again = false
+      xml = response.body.to_s
+      return XmlSimple.xml_in(xml)
+    end
+  end

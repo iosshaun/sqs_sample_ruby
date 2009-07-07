@@ -82,6 +82,12 @@ module AWS
         end
       end
 
+      ######################################################################### 
+      # Delete the specified queue
+      #
+      # Note: this will delete ALL messages in your queue, so use this function
+      # with caution!
+      #########################################################################
       def delete_queue()
         result = @sqs_client.make_request('DeleteQueue', self.url)
         unless result.include?('Error')

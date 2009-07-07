@@ -71,22 +71,6 @@ module AWS
         end
       end
     
-      ##############################################################################    	
-      # Delete the specified queue
-      #
-      # Note: this will delete ALL messages in your queue, so use this function with caution!
-      #
-      ##############################################################################
-      def delete_queue(queue_url)
-        result = make_request('DeleteQueue', queue_url)
-        unless result.include?('Error')
-          return true
-        else
-          raise Exception, "Amazon SQS Error Code: " + result['Error'][0]['Code'][0] +
-                           "\n" + result['Error'][0]['Message'][0]
-        end
-      end
-	
       ##############################################################################
       # Send a query request and return a SimpleXML object
       ##############################################################################
