@@ -19,6 +19,25 @@ module AWS
       def initialize(name, url, sqs_client)
         @name, @url, @sqs_client = name, url, sqs_client
       end
+
+      def push(body)
+        send_message(body)
+      end
+
+      def pop()
+        msg = receive_messages()
+
+        if msg[0].empty?
+          return nil
+        end
+
+        @receipt_handle = msg[0]["Message"][0]["ReceiptHandle"][0]
+        if delete_message(@receipt_handle)
+          return msg[0]["Message"][0]["Body"]
+        else
+          return nil
+        end
+      end
   
       ##############################################################################
       # Send a message to your queue

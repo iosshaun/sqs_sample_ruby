@@ -70,7 +70,29 @@ module AWS
                            "\n" + result['Error'][0]['Message'][0]
         end
       end
-    
+
+      def get_queue(queue_name)
+        params = {}
+        begin
+          lq_results = list_queues()
+        rescue Exception => err 
+          # Server side error. We won't be able to get the queue, so return nil.
+          return nil
+        end
+
+        if lq_results && !lq_results.empty?
+          queue_url_list = lq_results[0]['QueueUrl']
+
+          queue_url = queue_url_list.each do |qu|
+            if qu =~ /\/#{queue_name}/
+              return AWS::SQS::Queue.new(queue_name, qu, self)
+            end
+          end
+        end
+
+        return nil
+      end
+
       ##############################################################################
       # Send a query request and return a SimpleXML object
       ##############################################################################
