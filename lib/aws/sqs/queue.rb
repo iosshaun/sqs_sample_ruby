@@ -25,7 +25,8 @@ module AWS
       end
 
       def pop()
-        msg = receive_messages()
+        # Lock for 10 seconds.
+        msg = receive_messages(1, 10)
 
         if msg[0].empty?
           return nil
@@ -59,9 +60,10 @@ module AWS
       # Get a message(s) from your queue
       ##############################################################################
       def receive_messages(max_number_of_messages = -1, visibility_timeout = -1)
+        # Convert these params to strings so CGI escaping won't freak out.
         params = {}
-        params['MaxNumberOfMessages'] = max_number_of_messages if max_number_of_messages > -1
-        params['VisibilityTimeout'] = visibility_timeout if visibility_timeout > -1
+        params['MaxNumberOfMessages'] = max_number_of_messages.to_s if max_number_of_messages > -1
+        params['VisibilityTimeout'] = visibility_timeout.to_s if visibility_timeout > -1
         result = @sqs_client.make_request('ReceiveMessage', self.url, params)
         unless result.include?('Error')
           return result['ReceiveMessageResult']
