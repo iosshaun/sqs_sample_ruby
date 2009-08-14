@@ -45,7 +45,15 @@ module AWS
       ##############################################################################
       def list_queues()
         result = make_request('ListQueues')
-        value = result['ListQueuesResult']
+
+        if result['ListQueuesResult']
+          value = result['ListQueuesResult']
+        elsif result['ListQueuesResponse']
+          value = result['ListQueuesResponse']['ListQueuesResult']
+        else
+          value = nil
+        end
+
         unless value.nil?
           return value
         else
@@ -81,7 +89,14 @@ module AWS
         end
 
         if lq_results && !lq_results.empty?
-          queue_url_list = lq_results[0]['QueueUrl']
+          if lq_results.instance_of?(Array) && lq_results[0]
+            queue_url_list = lq_results[0]['QueueUrl']
+          elsif lq_results.instance_of?(Hash) && lq_results['QueueUrl']
+            queue_url_list = lq_results['QueueUrl']
+          else
+            return nil
+          end
+
 
           queue_url = queue_url_list.each do |qu|
             if qu =~ /\/#{queue_name}/

@@ -27,14 +27,18 @@ module AWS
       def pop()
         # Lock for 10 seconds.
         msg = receive_messages(1, 10)
-
-        if msg[0].empty?
+        if msg.instance_of?(Array) && !msg[0].empty?
+          @msg_body = msg[0]['Message'][0]['Body'][0]
+          @receipt_handle = msg[0]["Message"][0]["ReceiptHandle"][0]
+        elsif msg.instance_of?(Hash) && !msg.empty?
+          @msg_body = msg['Message']['Body']
+          @receipt_handle = msg["Message"]["ReceiptHandle"]
+        else
           return nil
         end
 
-        @receipt_handle = msg[0]["Message"][0]["ReceiptHandle"][0]
         if delete_message(@receipt_handle)
-          return msg[0]["Message"][0]["Body"]
+          return @msg_body 
         else
           return nil
         end
@@ -45,11 +49,18 @@ module AWS
       ##############################################################################
       def send_message(body)
         params = {}
-        params['MessageBody'] = body
+        params['MessageBody'] = body.to_s
         result = @sqs_client.make_request('SendMessage', self.url, params)
+        p result
 
         unless result.include?('Error')
-          return result['SendMessageResult'][0]['MessageId'][0].to_s
+          if result['SendMessageResult']
+            return result['SendMessageResult'][0]['MessageId'][0].to_s
+          elsif result['SendMessageResponse']
+            return result['SendMessageResponse']['SendMessageResult']['MessageId'].to_s
+          else
+            return false
+          end
         else
           raise Exception, "Amazon SQS Error Code: " + result['Error'][0]['Code'][0] +
                            "\n" + result['Error'][0]['Message'][0]
@@ -66,7 +77,11 @@ module AWS
         params['VisibilityTimeout'] = visibility_timeout.to_s if visibility_timeout > -1
         result = @sqs_client.make_request('ReceiveMessage', self.url, params)
         unless result.include?('Error')
-          return result['ReceiveMessageResult']
+          if result['ReceiveMessageResult']
+            return result['ReceiveMessageResult']
+          elsif result['ReceiveMessageResponse']
+            return result['ReceiveMessageResponse']['ReceiveMessageResult']
+          end
         else
           raise Exception, "Amazon SQS Error Code: " + result['Error'][0]['Code'][0] +
     			                 "\n" + result['Error'][0]['Message'][0]
