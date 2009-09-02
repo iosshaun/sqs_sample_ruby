@@ -11,18 +11,15 @@
 # CONDITIONS OF ANY KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations under the License.
 
+$:.unshift(File.dirname(__FILE__))
+require 'sqs/client'
+require 'sqs/queue'
+require 'sqs/version'
+
 module AWS
   module SQS
     # strings are UTF-8 encoded
     $KCODE = "u"
-  end
-      
-  module VERSION #:nodoc:
-    MAJOR = 0
-    MINOR = 1
-    TINY  = 4
-
-    STRING = [MAJOR, MINOR, TINY].join('.')
   end
 end
 
