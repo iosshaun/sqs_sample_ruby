@@ -51,7 +51,6 @@ module AWS
         params = {}
         params['MessageBody'] = body.to_s
         result = @sqs_client.make_request('SendMessage', self.url, params)
-        p result
 
         unless result.include?('Error')
           if result['SendMessageResult']
@@ -110,8 +109,13 @@ module AWS
         params = {}
         params['AttributeName'] = attribute
         result = @sqs_client.make_request('GetQueueAttributes', self.url, params)
+
         unless result.include?('Error')
-          return result['GetQueueAttributesResult'][0]['Attribute'][0]["Value"][0]
+          if result['GetQueueAttributesResult']
+            return result['GetQueueAttributesResult'][0]['Attribute'][0]["Value"][0]
+          elsif result['GetQueueAttributesResponse']
+            return result['GetQueueAttributesResponse']['GetQueueAttributesResult']['Attribute']["Value"]
+          end
         else
           raise Exception, "Amazon SQS Error Code: " + result['Error'][0]['Code'][0] +
                            "\n" + result['Error'][0]['Message'][0]
