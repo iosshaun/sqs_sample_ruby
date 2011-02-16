@@ -19,7 +19,9 @@ require 'sqs/version'
 module AWS
   module SQS
     # strings are UTF-8 encoded
-    $KCODE = "u"
+    if RUBY_VERSION < "1.9"
+      $KCODE = "u"
+    end
   end
 end
 
