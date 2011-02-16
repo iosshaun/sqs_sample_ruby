@@ -18,12 +18,12 @@ namespace :dist do
   spec = Gem::Specification.new do |s|
     s.name = 'aws-sqs'
     s.version = Gem::Version.new(AWS::SQS::Version)
-    s.summary = "Client library for Amazon's Simple Queue Service"
+    s.summary = "Ruby client library for Amazon's Simple Queue Service."
     s.description = s.summary
-    s.email = 'joshua.go@refinition.net'
+    s.email = 'joshuago@gmail.com'
     s.author = "Joshua Go"
     s.has_rdoc = true
-    s.extra_rdoc_files = %w(README COPYING INSTALL)
+    s.extra_rdoc_files = %w(INSTALL)
     s.homepage = 'http://refinition.net/aws-sqs'
     s.files = FileList['Rakefile', 'lib/**/*.rb']
   end
@@ -32,8 +32,6 @@ namespace :dist do
   Rake::GemPackageTask.new(spec) do |pkg|
     pkg.need_tar_gz = true
     pkg.package_files.include('{lib,test}/**/*')
-    pkg.package_files.include('README')
-    pkg.package_files.include('COPYING')
     pkg.package_files.include('INSTALL')
     pkg.package_files.include('Rakefile')
   end
